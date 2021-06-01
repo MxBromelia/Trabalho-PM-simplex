@@ -1,5 +1,7 @@
 from collections import UserList
 from dataclasses import dataclass
+import sys
+from json import load
 
 class Vector(UserList):
     def __mul__(self, other):
@@ -120,10 +122,19 @@ def print_simplex_matrix(simplex_matrix):
 def formatted_row(row):
     return ['{:7.3f}'.format(var) for var in row]
 
+def main():
+    if sys.argc < 2:
+        print("Documento não repassado")
+        return
+    with open(sys.argv[1]) as file:
+        model = load(file)
+    solution = do_simplex(
+        model['constraints'],
+        model['objective']
+    )
+    if solution is not None:
+        print_solution(solution)
+
+
 if __name__ == '__main__':
-    solution = do_simplex([
-        [2, 1, 2, 8],
-        [2, 2, 3, 12],
-        [2, 1, 3, 10]
-    ], [20, 15, 25])
-    print_solution(solution)
+    main()
