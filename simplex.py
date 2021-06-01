@@ -24,6 +24,25 @@ class Simplex:
     num_variables: int
     num_constraints: int
 
+    def current_solution(self):
+        return (self.matrix[0][-1], self._variables())
+
+    def _variables(self):
+        return dict(((self._varname(key), self._varvalue(key)) for key in range(self.num_variables)))
+
+    def _varname(self, key):
+        return f'x{key+1}'
+
+    def _varvalue(self, key):
+        values = [vec[key] for vec in self.matrix[1:]]
+        try:
+            index = findindex(values, lambda x: x == 1.00) + 1
+            return self.matrix[index][-1]
+        except StopIteration:
+            return 0
+        
+
+
 def do_simplex(constraints, objective):
     matrix = [
         normalized_objective(len(constraints), objective),
@@ -46,10 +65,7 @@ def solve_simplex(simplex, normalized=set()):
         all(el >=0 for el in simplex.matrix[0])
         or len(normalized) == simplex.num_variables
     ):
-        print_simplex_matrix(simplex.matrix)
-        return simplex.matrix
-
-    print_simplex_matrix(simplex.matrix)
+        return simplex.current_solution()
 
     target_index = findindex(simplex.matrix[0], lambda el: el == -maxnpabs(simplex.matrix[0]))
 
@@ -90,6 +106,11 @@ def normalized_objective(num_constraints, objective):
         0
     ])
 
+def print_solution(simplex_solution):
+    print(f"Maximun Value: {simplex_solution[0]}")
+    for key, value in simplex_solution[1].items():
+        print(f'{key}: {value}')
+
 def print_simplex_matrix(simplex_matrix):
     for row in simplex_matrix:
         *variables, result = formatted_row(row)
@@ -100,8 +121,9 @@ def formatted_row(row):
     return ['{:7.3f}'.format(var) for var in row]
 
 if __name__ == '__main__':
-    do_simplex([
+    solution = do_simplex([
         [2, 1, 2, 8],
         [2, 2, 3, 12],
         [2, 1, 3, 10]
     ], [20, 15, 25])
+    print_solution(solution)
