@@ -32,27 +32,44 @@ def do_simplex(constraints, objective):
     simplex = Simplex(matrix, len(objective), len(constraints))
     return solve_simplex(simplex)
 
-def solve_simplex(simplex):
-    print_simplex_matrix(simplex.matrix)
+def findindex(iterable, condition):
+    return next(
+        index for index, element in enumerate(iterable)
+        if condition(element)
+    )
 
-    pivot = simplex.matrix[0].index(-max(abs(x) for x in simplex.matrix[0] if x <= 0))
+def maxnpabs(iterable):
+    return max(abs(el) for el in iterable if el <= 0)
+
+def solve_simplex(simplex, normalized=[]):
+    if(all(el >=0 for el in simplex.matrix[0])):
+        print_simplex_matrix(simplex.matrix)
+        return simplex.matrix
+
+    target_index = findindex(simplex.matrix[0], lambda el: el == -maxnpabs(simplex.matrix[0]))
     
-    ratios = [
-        float(vector[-1]) / vector[pivot]
+    raw_ratios = (
+        float(vector[-1]) / vector[target_index]
         for vector in simplex.matrix[1:]
-    ]
-    minratio = ratios.index(min(value for value in ratios if value >= 0)) + 1
+    )
+    ratios = [ratio for ratio in raw_ratios if ratio > 0]
+    if(len(ratios) == 0):
+        print("O sistema possui múltiplas soluções\n")
+        return None
 
-    simplex.matrix[minratio] = simplex.matrix[minratio] * (1/float(simplex.matrix[minratio][pivot]))
-    print_simplex_matrix(simplex.matrix)
+    minratio_index = ratios.index(min(value for value in ratios if value >= 0)) + 1
+
+    normalized_vector = simplex.matrix[minratio_index]
+    normalized_vector = normalized_vector * (1/float(normalized_vector[target_index]))
 
     for index, vector in enumerate(simplex.matrix):
-        if index == minratio:
+        if index == minratio_index:
             continue
-        aux = vector[pivot]
-        simplex.matrix[index] -= aux * simplex.matrix[minratio]
-    
-    print_simplex_matrix(simplex.matrix)
+        aux = vector[target_index]
+        simplex.matrix[index] -= aux * normalized_vector
+    simplex.matrix[minratio_index] = normalized_vector
+
+    return solve_simplex(simplex, [*normalized, target_index])
 
 def normalized_constraints(constraints):
     return_value = []
@@ -80,3 +97,14 @@ def formatted_row(row):
 
 if __name__ == '__main__':
     do_simplex([[1, 1, 100], [1, 3, 270]], [10, 12])
+    do_simplex([
+        [-4, 1, 4],
+        [2, -3, 6]
+    ], [1, 2])
+    do_simplex(
+        [
+            [5, 1, 6, 24],
+            [1, 1, 3, 8],
+            [11, 3, 4, 95]
+        ], [ 5, 1, 9]
+    )
