@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import sys
 from json import load
 
+#Para saber a formatação dos testes checar o README
+
 class Vector(UserList):
     def __mul__(self, other):
         return Vector(el * other for el in self)
