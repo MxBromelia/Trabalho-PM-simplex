@@ -36,12 +36,15 @@ class Simplex:
         self.matrix = simplex_matrix(self.constraints, self.objective)
         self.num_constraints = len(self.constraints)
         self.num_variables = len(self.objective)
+        self._solution = None
 
     def current_solution(self):
         return (self.matrix[0][-1], self._variables())
 
     def solution(self):
-        return solve_simplex(self)
+        if self._solution is None:
+            self._solution = solve_simplex(self)
+        return self._solution
 
     def _variables(self):
         return dict(((self._varname(key), self._varvalue(key)) for key in range(self.num_variables)))
@@ -100,16 +103,16 @@ def solve_simplex(simplex, normalized=set()):
 
     target_index = findindex(simplex.matrix[0], lambda el: el == -maxnpabs(simplex.matrix[0]))
 
-    raw_ratios = (
+    raw_ratios = [
         float(vector[-1]) / vector[target_index] if vector[target_index] != 0 else -1
         for vector in simplex.matrix[1:]
-    )
-    ratios = [ratio for ratio in raw_ratios]
+    ]
+    ratios = [ratio for ratio in raw_ratios if ratio >= 0]
     if(len(ratios) == 0):
         print("O sistema possui múltiplas soluções\n")
         return None
 
-    minratio_index = ratios.index(min(value for value in ratios if value >= 0)) + 1
+    minratio_index = raw_ratios.index(min(value for value in raw_ratios if value >= 0)) + 1
     normalized_vector = simplex.matrix[minratio_index]
 
     try:

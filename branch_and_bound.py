@@ -5,8 +5,6 @@ from math import floor
 from json import load
 import sys
 
-# breakpoint = lambda: None
-
 Objective = Collection[float]
 Constraints = Collection[Collection[float]]
 
@@ -35,7 +33,6 @@ class BABNode:
         for index, value in enumerate(solution[1].values()):
             if not value.is_integer():
                 lt_constraint, gt_constraint = node_constraints(index, value, len(solution[1]))
-                print(value)
                 return [
                     BABNode(objective=self.objective, constraints = [*self.constraints, lt_constraint]),
                     BABNode(objective=self.objective, constraints = [*self.constraints, gt_constraint])
@@ -57,17 +54,16 @@ class BABTree:
         while len(self.subproblems) > 0:
             current = self.subproblems.pop(0)
             result: BABNode = current.test_node()
-            print("subproblems left: ", len(self.subproblems))
-
             if isinstance(result, list):
-                if len(self.subproblems) > 10:
-                    breakpoint()
-                self.subproblems += result
+                for subproblem in result:
+                    [*rest, last] = subproblem.simplex.constraints
+                    if last not in rest:
+                        self.subproblems.append(subproblem)
             elif isinstance(result, BABNode):
                 if self.candidate_solution is None or \
                    self.candidate_solution.solution()[0] < result.simplex.solution()[0]:
                     self.candidate_solution = result.simplex
-        return self.candidate_solution
+        return self.candidate_solution.solution()
 
 def branch_and_bound(constraints, objective):
     solver = BABTree(constraints=constraints, objective=objective)
